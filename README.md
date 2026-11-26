@@ -90,6 +90,7 @@ Full monitor setup: [docs/SETUP-FIRESTICK.md](docs/SETUP-FIRESTICK.md).
    - Place a `rehearsal`-tagged test order on each store, plus one Garage pickup.
    - Check each one shows once and merges when its Syncio copy arrives.
    - Check it clears with the remote.
+   - **Safe test orders (used 2026-11-25):** on Garage, make a **$0 draft order with custom line items** (no product, no customer, no address), tag it `rehearsal`, and complete it. No stock moves, no email goes out, sales stay at $0, and Syncio can't push it to Supply (it needs a customer and an address). For a pickup, name the shipping line `11774 Hesperia Road`. Afterwards cancel and delete each order and its draft. Delete them within 3 hours, or the logistics app will flag them as missing from Supply.
 3. **Go live.** Set `BOARD_MODE=live` and `BOARD_START_AT=<now>`, so old orders don't flood the board.
 
 To check against real data:
