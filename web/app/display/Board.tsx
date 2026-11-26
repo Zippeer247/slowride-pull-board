@@ -443,7 +443,13 @@ export default function Board() {
         )}
 
         <main className="cards" ref={cardsRef}>
-          {data && toPull.length === 0 && <div className="clear">All clear</div>}
+          {data && toPull.length === 0 && (
+            <div className="clear">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="clear-logo" src="/slowride-logo.svg" alt="Slowride" />
+              <div>All clear</div>
+            </div>
+          )}
           {toPull.map((c) => {
             const ms = now - Date.parse(c.createdAt);
             const lvl = data ? ageLevel(ms, data.amberMin, data.redMin) : "ok";

@@ -1,9 +1,9 @@
-/* 1920x1080 stage, scaled to fit. Monochrome: black, greys, white cards.
+/* 1920x1080 stage, scaled to fit. Slowride navy on light grey, white cards.
    Colour only where it means something: red = waiting too long / not connected. */
 :root {
   --bg: #f2f2f2;
   --card: #ffffff;
-  --ink: #0a0a0a;
+  --ink: #142751; /* Slowride logo navy */
   --dim: #9b9b9b;
   --red: #e5392b;
   --radius: 40px;
@@ -11,7 +11,7 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
-body { font-family: var(--font-inter), -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
+body { font-family: var(--font-slowride), -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
 a { color: var(--ink); }
 
 .dim { color: var(--dim); }
@@ -58,7 +58,7 @@ a { color: var(--ink); }
 
 .more-below { position: absolute; left: 0; right: 0; bottom: 0; padding: 120px 0 36px; text-align: center; font-size: 30px; font-weight: 600; color: var(--dim); background: linear-gradient(to bottom, rgba(242, 242, 242, 0), var(--bg) 60%); pointer-events: none; }
 
-.clear { grid-column: 1 / -1; text-align: center; margin-top: 260px; font-size: 120px; font-weight: 700; letter-spacing: -0.04em; }
+.clear { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 44px; text-align: center; margin-top: 235px; font-size: 120px; font-weight: 700; letter-spacing: -0.04em; }
 
 /* Recently pulled (only when there is something) */
 .strip { display: flex; align-items: center; gap: 20px; padding: 28px 8px 40px; font-size: 28px; font-weight: 600; overflow: hidden; }
@@ -84,3 +84,5 @@ a { color: var(--ink); }
 /* New-order notice */
 .toast { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 40px; font-weight: 600; padding: 24px 56px; border-radius: 999px; animation: drop 0.35s ease-out; }
 @keyframes drop { from { transform: translate(-50%, -24px); opacity: 0; } }
+/* Logo above "All clear": a little narrower than the words, centred. */
+.clear-logo { width: 440px; height: auto; display: block; }
