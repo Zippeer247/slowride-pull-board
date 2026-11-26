@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import type { BoardMode } from "./board";
 
 const num = (v: string | undefined, d: number) => (v && !Number.isNaN(Number(v)) ? Number(v) : d);
@@ -40,10 +41,19 @@ export function config() {
   };
 }
 
-/** Screens send the key as ?key= on the page and x-display-key on API calls. Open when unset (local dev). */
+const digest = (s: string) => createHash("sha256").update(s).digest();
+
+/**
+ * Screens send the key in the x-display-key header on every API call. It is never accepted
+ * in the URL, so it stays out of server logs.
+ *
+ * With no DISPLAY_KEY set: open in local dev, CLOSED in any production build. A deployment
+ * that is missing the variable (a preview, a new project) must not serve orders to anyone.
+ */
 export function authorized(req: Request): boolean {
   const key = config().displayKey;
-  if (!key) return true;
-  const url = new URL(req.url);
-  return req.headers.get("x-display-key") === key || url.searchParams.get("key") === key;
+  if (!key) return process.env.NODE_ENV !== "production";
+  const sent = req.headers.get("x-display-key") ?? "";
+  // Compare hashes in constant time, so the response time says nothing about the key.
+  return timingSafeEqual(digest(sent), digest(key));
 }

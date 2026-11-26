@@ -7,7 +7,7 @@ export default function Home() {
         <li><a href="/display?screen=front">Front of store</a></li>
         <li><a href="/display?screen=back">Back of store</a></li>
       </ul>
-      <p style={{ opacity: 0.6, fontSize: 20 }}>Add &amp;key=… when DISPLAY_KEY is set.</p>
+      <p style={{ opacity: 0.6, fontSize: 20 }}>Add #key=… when DISPLAY_KEY is set.</p>
     </main>
   );
 }

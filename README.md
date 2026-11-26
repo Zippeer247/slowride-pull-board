@@ -66,7 +66,9 @@ In a browser, the arrow keys, **Enter** and **Esc** stand in for the remote. Ope
 3. Set the environment variables (see `web/.env.example`):
    - `DATA_SOURCE=mock` for now
    - `DISPLAY_KEY=<long random string>` (for example, from `openssl rand -hex 24`)
-4. Open `https://<app>.vercel.app/display?screen=front&key=<DISPLAY_KEY>`.
+4. Open `https://<app>.vercel.app/display?screen=front#key=<DISPLAY_KEY>`.
+
+**Access:** the API answers only to the `x-display-key` header. The key sits in the URL fragment (`#key=`), which browsers never send to the server, so it stays out of logs. Without `DISPLAY_KEY`, a production build refuses every request (only `npm run dev` is open). To rotate the key: change `DISPLAY_KEY` in Vercel, redeploy, rebuild both APKs and reinstall them.
 
 ## Fire TV app
 

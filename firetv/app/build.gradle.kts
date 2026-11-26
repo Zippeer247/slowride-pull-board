@@ -1,5 +1,6 @@
 // One APK per monitor. The board URL (with screen name and display key) is baked in so the
-// stick needs no setup beyond installing it:
+// stick needs no setup beyond installing it. The key goes in the URL fragment (#key=), which
+// is never sent to the server, so it stays out of request logs.
 //   gradle assembleFrontDebug assembleBackDebug -PboardBaseUrl=https://<app>.vercel.app -PdisplayKey=<DISPLAY_KEY>
 plugins {
     id("com.android.application")
@@ -10,7 +11,7 @@ val boardBaseUrl = (findProperty("boardBaseUrl") as String?)?.trimEnd('/') ?: "h
 val displayKey = (findProperty("displayKey") as String?) ?: ""
 
 fun boardUrl(screen: String) =
-    "$boardBaseUrl/display?screen=$screen" + if (displayKey.isNotEmpty()) "&key=$displayKey" else ""
+    "$boardBaseUrl/display?screen=$screen" + if (displayKey.isNotEmpty()) "#key=$displayKey" else ""
 
 android {
     namespace = "com.slowride.pullboard"

@@ -5,6 +5,7 @@ import android.app.Activity
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.Network
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -62,6 +63,10 @@ class MainActivity : Activity() {
             settings.mediaPlaybackRequiresUserGesture = false // optional new-order chime
             settings.loadWithOverviewMode = true
             settings.useWideViewPort = true
+            // The page needs nothing from the device: no files, no content providers.
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
+            settings.setGeolocationEnabled(false)
             webViewClient = BoardClient()
         }
         setContentView(web)
@@ -75,8 +80,15 @@ class MainActivity : Activity() {
 
     private fun loadBoard() {
         handler.removeCallbacks(retry)
+        val wasOffline = showingOffline
         showingOffline = false
-        web.loadUrl(BuildConfig.BOARD_URL)
+        // The URL ends in #key=..., and loading a URL that differs from the current one only
+        // by its fragment would not refetch the page. Reload instead when already on the board.
+        if (!wasOffline && web.url?.substringBefore('#') == BuildConfig.BOARD_URL.substringBefore('#')) {
+            web.reload()
+        } else {
+            web.loadUrl(BuildConfig.BOARD_URL)
+        }
     }
 
     private fun showOfflineAndRetry(reason: String) {
@@ -96,7 +108,13 @@ class MainActivity : Activity() {
         retryDelayMs = (retryDelayMs * 2).coerceAtMost(MAX_RETRY_MS)
     }
 
+    private val boardHost: String? = Uri.parse(BuildConfig.BOARD_URL).host
+
     private inner class BoardClient : WebViewClient() {
+        // The WebView only ever shows the board. Any navigation to another site is refused.
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
+            request.url.host != boardHost
+
         override fun onPageFinished(view: WebView, url: String?) {
             if (!showingOffline) retryDelayMs = INITIAL_RETRY_MS
         }

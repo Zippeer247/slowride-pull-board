@@ -45,9 +45,21 @@ function useFit(): React.CSSProperties {
   return fit;
 }
 
+// The display key rides in the URL fragment (/display?screen=front#key=...). Browsers never
+// send the fragment to a server, so the key stays out of request logs and Referer headers.
+// Older installs pass ?key= instead: still read, then moved into the fragment.
 function readParams(): Params {
   const q = new URLSearchParams(window.location.search);
-  return { screen: q.get("screen") || "front", key: q.get("key") || "", chime: q.get("chime") === "1" };
+  const h = new URLSearchParams(window.location.hash.slice(1));
+  const key = h.get("key") || q.get("key") || "";
+  if (q.has("key")) {
+    q.delete("key");
+    const rest = q.toString();
+    try {
+      window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}#key=${encodeURIComponent(key)}`);
+    } catch {}
+  }
+  return { screen: q.get("screen") || "front", key, chime: q.get("chime") === "1" };
 }
 
 function ageText(ms: number): string {
