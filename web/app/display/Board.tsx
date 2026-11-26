@@ -1,8 +1,7 @@
 "use client";
 
 // The board shown on the Fire TV monitors. Driven entirely by the remote:
-//   D-pad = move, OK (Enter) = pulled / undo, Back = cancel.
-// The Fire TV app forwards Back to window.pullboardBack(); in a browser use Esc.
+//   D-pad = move, tap OK (Enter) = pulled, hold OK = bring back the last pulled order.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoardResponse, Card, PulledInfo } from "@/lib/types";
@@ -26,7 +25,6 @@ function reloadForNewBuild() {
 }
 
 type Pulled = Card & { pulled: PulledInfo };
-type Confirm = { action: "pull" | "undo"; card: Card } | null;
 
 interface Params {
   screen: string;
@@ -136,9 +134,6 @@ export default function Board() {
   const cardsRef = useRef<HTMLElement | null>(null);
   const [hiddenBelow, setHiddenBelow] = useState(0);
   const [focusKey, setFocusKey] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<Confirm>(null);
-  const confirmOpen = useRef(false);
-  confirmOpen.current = confirm !== null;
   const [toast, setToast] = useState<string | null>(null);
   const [failMsg, setFailMsg] = useState<string | null>(null);
   const seen = useRef<Set<string> | null>(null);
@@ -158,8 +153,8 @@ export default function Board() {
       });
       if (!res.ok) throw new Error(res.status === 401 ? "Wrong display key" : `Server error ${res.status}`);
       const j = (await res.json()) as BoardResponse;
-      // Not while a "Pulled?" dialog is open: the next poll will do it.
-      if (BUILD && j.build && j.build !== BUILD && !confirmOpen.current) return reloadForNewBuild();
+      // Not while someone is holding OK to undo: the next poll will do it.
+      if (BUILD && j.build && j.build !== BUILD && !hold.current) return reloadForNewBuild();
       setClockOffset(Date.parse(j.now) - Date.now());
       setData(j);
       setLastOk(Date.now());
@@ -284,8 +279,8 @@ export default function Board() {
   );
 
   // Latest state for timers (the hold-to-undo interval outlives a render).
-  const latest = useRef({ confirm, justPulled, send });
-  latest.current = { confirm, justPulled, send };
+  const latest = useRef({ justPulled, send });
+  latest.current = { justPulled, send };
 
   // Hold OK to bring back the last pulled order.
   const hold = useRef<{ start: number; done: boolean; timer: ReturnType<typeof setInterval> } | null>(null);
@@ -315,7 +310,7 @@ export default function Board() {
       done: false,
       timer: setInterval(() => {
         const elapsed = performance.now() - h.start;
-        if (latest.current.confirm || h.done) return;
+        if (h.done) return;
         if (elapsed >= HOLD_SHOW_MS) setHoldProgress(Math.min(1, (elapsed - HOLD_SHOW_MS) / (HOLD_MS - HOLD_SHOW_MS)));
         if (elapsed >= HOLD_MS) {
           h.done = true;
@@ -340,34 +335,26 @@ export default function Board() {
 
   // Remote / keyboard handling.
   // OK acts on release, so a press can be told apart from a hold:
-  //   tap = open / confirm the dialog, hold ~1.5 s = bring back the last pulled order.
+  //   tap = pull the selected order, hold ~1.5 s = bring back the last pulled order.
+  // Back does nothing on the board (the Fire TV app keeps it from leaving).
   useEffect(() => {
-    const back = () => setConfirm(null);
-    (window as unknown as { pullboardBack?: () => boolean }).pullboardBack = () => {
-      const had = confirm !== null;
-      back();
-      return had;
-    };
+    (window as unknown as { pullboardBack?: () => boolean }).pullboardBack = () => false;
     const isOkKey = (e: KeyboardEvent) => e.key === "Enter" || e.key === " " || e.keyCode === 23;
 
+    // One tap = done. No confirm step: a mis-tap is undone by holding OK.
     const onOk = () => {
-      if (confirm) {
-        if (confirm.action === "pull") {
-          // Keep focus in the grid: move to the card that takes this one's place.
-          const idx = toPull.findIndex((c) => c.key === confirm.card.key);
-          const rest = toPull.filter((c) => c.key !== confirm.card.key);
-          const nextCard = rest[Math.min(idx, rest.length - 1)];
-          if (nextCard) setFocusKey(nextCard.key);
-        }
-        send(confirm.card.key, confirm.action === "undo");
-        setConfirm(null);
-        return;
-      }
       if (!focusKey) return;
       const i = order.indexOf(focusKey);
       if (i < 0) return;
-      if (i >= toPull.length) setConfirm({ action: "undo", card: justPulled[i - toPull.length] });
-      else setConfirm({ action: "pull", card: toPull[i] });
+      if (i >= toPull.length) {
+        send(justPulled[i - toPull.length].key, true); // tap a "Pulled" chip = put it back
+        return;
+      }
+      // Keep focus in the grid: move to the card that takes this one's place.
+      const rest = toPull.filter((_, j) => j !== i);
+      const nextCard = rest[Math.min(i, rest.length - 1)];
+      if (nextCard) setFocusKey(nextCard.key);
+      send(toPull[i].key, false);
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -375,12 +362,6 @@ export default function Board() {
       if (isOkKey(e)) {
         e.preventDefault();
         if (!e.repeat) startHold();
-        return;
-      }
-      const isBack = k === "Escape" || k === "Backspace" || k === "GoBack" || k === "BrowserBack";
-      if (confirm) {
-        e.preventDefault();
-        if (isBack) back();
         return;
       }
       if (!focusKey) return;
@@ -415,7 +396,7 @@ export default function Board() {
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
     };
-  }, [confirm, focusKey, order, toPull, justPulled, send, startHold, endHold]);
+  }, [focusKey, order, toPull, justPulled, send, startHold, endHold]);
 
   const stale = (lastOk === 0 && !!failMsg) || (lastOk > 0 && tick - lastOk > STALE_MS);
   const alarm = !!data && toPull.some((c) => now - Date.parse(c.createdAt) >= data.alarmMin * 60000);
@@ -479,7 +460,7 @@ export default function Board() {
           })}
         </main>
 
-        {hiddenBelow > 0 && <div className="more-below">{hiddenBelow} more below</div>}
+        {hiddenBelow > 0 && <div className={`more-below ${justPulled.length ? "above-strip" : ""}`}>{hiddenBelow} more below</div>}
 
         {justPulled.length > 0 && (
           <footer className="strip">
@@ -490,20 +471,6 @@ export default function Board() {
               </span>
             ))}
           </footer>
-        )}
-
-        {confirm && (
-          <div className="modal">
-            <div className="dialog">
-              <div className="q">
-                {confirm.action === "pull" ? "Pulled" : "Put back"} <span className="dim">{confirm.card.number}?</span>
-              </div>
-              <div className="keys">
-                <span className="key yes">OK</span>
-                <span className="key no">Back</span>
-              </div>
-            </div>
-          </div>
         )}
 
         {holdProgress !== null && (

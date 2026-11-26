@@ -58,22 +58,14 @@ a { color: var(--ink); }
 
 .more-below { position: absolute; left: 0; right: 0; bottom: 0; padding: 120px 0 36px; text-align: center; font-size: 30px; font-weight: 600; color: var(--dim); background: linear-gradient(to bottom, rgba(242, 242, 242, 0), var(--bg) 60%); pointer-events: none; }
 
+.more-below.above-strip { bottom: 120px; padding-bottom: 16px; }
 .clear { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 44px; text-align: center; margin-top: 235px; font-size: 120px; font-weight: 700; letter-spacing: -0.04em; }
 
 /* Recently pulled (only when there is something) */
-.strip { display: flex; align-items: center; gap: 20px; padding: 28px 8px 40px; font-size: 28px; font-weight: 600; overflow: hidden; }
+.strip { position: relative; z-index: 1; background: var(--bg); display: flex; align-items: center; gap: 20px; padding: 28px 8px 40px; font-size: 28px; font-weight: 600; overflow: hidden; }
 .chip { background: var(--card); padding: 16px 28px; border-radius: 999px; white-space: nowrap; outline: 0 solid transparent; }
 .chip .dim { margin-left: 8px; font-weight: 500; }
 .chip.focus { outline: 5px solid var(--ink); }
-
-/* Confirm */
-.modal { position: absolute; inset: 0; background: rgba(242, 242, 242, 0.85); display: grid; place-items: center; }
-.dialog { background: var(--card); border-radius: 56px; padding: 72px 96px; text-align: center; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12); }
-.dialog .q { font-size: 72px; font-weight: 700; letter-spacing: -0.03em; }
-.dialog .keys { display: flex; justify-content: center; gap: 24px; margin-top: 56px; }
-.key { font-size: 34px; font-weight: 600; padding: 20px 56px; border-radius: 999px; }
-.key.yes { background: var(--ink); color: #fff; }
-.key.no { background: var(--bg); color: var(--ink); }
 
 /* Hold OK to bring back the last pulled order */
 .hold { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); background: var(--card); border-radius: 40px; padding: 36px 56px 40px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.14); text-align: center; min-width: 640px; }

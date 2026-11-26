@@ -47,7 +47,7 @@ The board opens on its own.
 ## 6. Check it
 
 - [ ] The board fills the screen with nothing cut off.
-- [ ] On the remote, the ◀ ▶ ▲ ▼ buttons move the white outline. **OK** asks "Pulled #…?", and **Back** cancels.
+- [ ] On the remote, the ◀ ▶ ▲ ▼ buttons move the black outline. One tap of **OK** clears that order.
 - [ ] Pull an order, then **hold OK**. The bar fills and the order comes back.
 - [ ] **Unplug the stick's power, wait 10 seconds, and plug it back in.** The board comes back on its own within about a minute.
 - [ ] Leave it for 30 minutes. No screensaver appears.
@@ -55,7 +55,7 @@ The board opens on its own.
 ## Everyday use (for staff)
 
 - **New orders pulse.** After **30 minutes** the card turns **light red**. If anything has waited over **an hour**, **"To pull" flashes red**.
-- Go get the items, set them aside, then on the remote: select the order, press **OK**, then **OK** again.
+- Go get the items, set them aside, then on the remote: select the order and press **OK** once. It clears right away.
 - **Pulled the wrong one?** **Hold OK** until the bar fills (about 1.5 seconds). The last order you pulled comes back. This works for 15 minutes after the pull.
 - **Red "Not connected" bar?** Check the Wi-Fi. The board fixes itself when the internet comes back. The ☰ button on the remote reloads it right away.
 - **Someone pressed Home?** Open **Pull Board** from the apps row, or just unplug and replug the stick.
