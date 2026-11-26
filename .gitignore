@@ -7,3 +7,13 @@ __pycache__/
 .venv/
 dist/
 build/
+!.env.example
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.vercel/
+# Fire TV build output
+.gradle/
+firetv/app/build/
+firetv/dist/
+local.properties

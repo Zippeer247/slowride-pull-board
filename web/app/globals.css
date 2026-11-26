@@ -1,0 +1,86 @@
+/* 1920x1080 stage, scaled to fit. Monochrome: black, greys, white cards.
+   Colour only where it means something: red = waiting too long / not connected. */
+:root {
+  --bg: #f2f2f2;
+  --card: #ffffff;
+  --ink: #0a0a0a;
+  --dim: #9b9b9b;
+  --red: #e5392b;
+  --radius: 40px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
+body { font-family: var(--font-inter), -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
+a { color: var(--ink); }
+
+.dim { color: var(--dim); }
+.small { font-size: 26px; font-weight: 500; }
+
+.stage { position: absolute; width: 1920px; height: 1080px; transform-origin: 0 0; }
+.board { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding: 0 56px; }
+
+/* Header: "To pull 6" ... time */
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 44px 8px 28px; }
+.top h1 { margin: 0; font-size: 96px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; }
+.top h1 .count { color: var(--dim); }
+/* An order has waited over ALARM_MIN (1 h): the title flashes red. */
+.top h1.alarm, .top h1.alarm .count { animation: alarm 1s steps(1, end) infinite; }
+@keyframes alarm { 0% { color: var(--red); } 50% { color: var(--ink); } }
+.top-right { display: flex; align-items: baseline; gap: 32px; }
+
+/* Only shown when something is wrong */
+.banner { margin: 0 0 24px; padding: 22px 36px; border-radius: 28px; background: var(--red); color: #fff; font-size: 32px; font-weight: 600; }
+.banner.soft { background: var(--card); color: var(--ink); }
+
+/* Cards */
+.cards { flex: 1; overflow: hidden; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: min-content; gap: 32px; align-content: start; align-items: start; padding: 8px; margin: -8px; }
+.card { background: var(--card); border-radius: var(--radius); padding: 36px 40px 40px; display: flex; flex-direction: column; gap: 28px; outline: 0 solid transparent; transition: outline-color 0.15s, box-shadow 0.15s; scroll-margin: 16px; }
+.card.focus { outline: 6px solid var(--ink); outline-offset: 0; }
+.card.lvl-new { animation: arrive 1.4s ease-in-out infinite; }
+@keyframes arrive { 50% { box-shadow: 0 0 0 10px rgba(10, 10, 10, 0.12); } }
+
+.card-head { display: flex; align-items: baseline; gap: 18px; }
+.card-head .dim { font-size: 30px; font-weight: 600; }
+.num { font-size: 52px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.age { margin-left: auto; font-size: 32px; font-weight: 600; color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lvl-amber .age { color: var(--ink); }
+.card.lvl-red { background: #fde7e5; }
+.lvl-red .age { color: var(--red); }
+
+.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+.items li { display: flex; align-items: center; gap: 22px; font-size: 26px; }
+.items img, .noimg { width: 96px; height: 96px; border-radius: 22px; object-fit: cover; background: var(--bg); flex: none; }
+.it { flex: 1; min-width: 0; }
+.it-title { font-size: 30px; font-weight: 600; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.it-var { font-size: 28px; font-weight: 500; color: var(--dim); margin-top: 4px; }
+.qty { flex: none; min-width: 72px; height: 72px; padding: 0 16px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 32px; font-weight: 700; display: grid; place-items: center; }
+
+.more-below { position: absolute; left: 0; right: 0; bottom: 0; padding: 120px 0 36px; text-align: center; font-size: 30px; font-weight: 600; color: var(--dim); background: linear-gradient(to bottom, rgba(242, 242, 242, 0), var(--bg) 60%); pointer-events: none; }
+
+.clear { grid-column: 1 / -1; text-align: center; margin-top: 260px; font-size: 120px; font-weight: 700; letter-spacing: -0.04em; }
+
+/* Recently pulled (only when there is something) */
+.strip { display: flex; align-items: center; gap: 20px; padding: 28px 8px 40px; font-size: 28px; font-weight: 600; overflow: hidden; }
+.chip { background: var(--card); padding: 16px 28px; border-radius: 999px; white-space: nowrap; outline: 0 solid transparent; }
+.chip .dim { margin-left: 8px; font-weight: 500; }
+.chip.focus { outline: 5px solid var(--ink); }
+
+/* Confirm */
+.modal { position: absolute; inset: 0; background: rgba(242, 242, 242, 0.85); display: grid; place-items: center; }
+.dialog { background: var(--card); border-radius: 56px; padding: 72px 96px; text-align: center; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12); }
+.dialog .q { font-size: 72px; font-weight: 700; letter-spacing: -0.03em; }
+.dialog .keys { display: flex; justify-content: center; gap: 24px; margin-top: 56px; }
+.key { font-size: 34px; font-weight: 600; padding: 20px 56px; border-radius: 999px; }
+.key.yes { background: var(--ink); color: #fff; }
+.key.no { background: var(--bg); color: var(--ink); }
+
+/* Hold OK to bring back the last pulled order */
+.hold { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); background: var(--card); border-radius: 40px; padding: 36px 56px 40px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.14); text-align: center; min-width: 640px; }
+.hold-label { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; }
+.hold-track { margin-top: 28px; height: 16px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.hold-fill { height: 100%; background: var(--ink); transform-origin: 0 50%; }
+
+/* New-order notice */
+.toast { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 40px; font-weight: 600; padding: 24px 56px; border-radius: 999px; animation: drop 0.35s ease-out; }
+@keyframes drop { from { transform: translate(-50%, -24px); opacity: 0; } }
