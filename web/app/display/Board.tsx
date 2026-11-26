@@ -408,7 +408,8 @@ export default function Board() {
   return (
     <div className="stage" style={fit}>
       <div className="board">
-        <header className="top">
+        {/* Nothing to pull: the screen is just the logo (no heading). */}
+        <header className={`top ${data && toPull.length === 0 ? "hidden" : ""}`}>
           <h1 className={alarm ? "alarm" : ""}>
             To pull <span className="count">{data ? toPull.length : ""}</span>
           </h1>
@@ -428,7 +429,6 @@ export default function Board() {
             <div className="clear">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="clear-logo" src="/slowride-logo.svg" alt="Slowride" />
-              <div>All clear</div>
             </div>
           )}
           {toPull.map((c) => {
