@@ -69,6 +69,8 @@ export interface PulledInfo {
 
 export interface BoardResponse {
   now: string;
+  /** Build stamp of the server answering. Differs from the page's own after a deploy. */
+  build: string;
   mode: "live" | "rehearsal";
   source: "mock" | "live";
   amberMin: number;

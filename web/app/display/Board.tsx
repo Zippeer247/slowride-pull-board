@@ -12,6 +12,18 @@ const STALE_MS = 120_000;
 const COLS = 3;
 const HOLD_MS = 1500; // hold OK this long to bring back the last pulled order
 const HOLD_SHOW_MS = 300; // shorter than this is a normal tap
+const BUILD = process.env.NEXT_PUBLIC_BUILD_ID ?? ""; // the build this page came from
+const RELOAD_GAP_MS = 120_000; // never auto-reload more often than this
+
+/** A newer version was deployed: reload to pick it up. The sticks have no refresh button. */
+function reloadForNewBuild() {
+  try {
+    const last = Number(sessionStorage.getItem("pullboard:reloaded") || 0);
+    if (Date.now() - last < RELOAD_GAP_MS) return; // guard against a reload loop
+    sessionStorage.setItem("pullboard:reloaded", String(Date.now()));
+  } catch {}
+  window.location.reload();
+}
 
 type Pulled = Card & { pulled: PulledInfo };
 type Confirm = { action: "pull" | "undo"; card: Card } | null;
@@ -30,17 +42,32 @@ const STAGE_H = 1080;
 function useFit(): React.CSSProperties {
   const [fit, setFit] = useState<React.CSSProperties>({ visibility: "hidden" });
   useEffect(() => {
+    // Measure the part of the page that is really on screen. visualViewport stays right even
+    // if a TV WebView zooms the page or ignores the viewport tag; innerWidth alone does not.
+    const vv = window.visualViewport;
     const update = () => {
-      const s = Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H);
+      const w = vv?.width || window.innerWidth;
+      const h = vv?.height || window.innerHeight;
+      if (!w || !h) return; // not laid out yet: a later measure will catch it
+      const s = Math.min(w / STAGE_W, h / STAGE_H);
       setFit({
         transform: `scale(${s})`,
-        left: (window.innerWidth - STAGE_W * s) / 2,
-        top: (window.innerHeight - STAGE_H * s) / 2,
+        left: (vv?.offsetLeft ?? 0) + (w - STAGE_W * s) / 2,
+        top: (vv?.offsetTop ?? 0) + (h - STAGE_H * s) / 2,
       });
     };
     update();
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    vv?.addEventListener("resize", update);
+    vv?.addEventListener("scroll", update);
+    // Some WebViews settle their size shortly after load without firing "resize".
+    const timers = [100, 500, 1500, 4000].map((ms) => setTimeout(update, ms));
+    return () => {
+      window.removeEventListener("resize", update);
+      vv?.removeEventListener("resize", update);
+      vv?.removeEventListener("scroll", update);
+      timers.forEach(clearTimeout);
+    };
   }, []);
   return fit;
 }
@@ -110,6 +137,8 @@ export default function Board() {
   const [hiddenBelow, setHiddenBelow] = useState(0);
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
+  const confirmOpen = useRef(false);
+  confirmOpen.current = confirm !== null;
   const [toast, setToast] = useState<string | null>(null);
   const [failMsg, setFailMsg] = useState<string | null>(null);
   const seen = useRef<Set<string> | null>(null);
@@ -129,6 +158,8 @@ export default function Board() {
       });
       if (!res.ok) throw new Error(res.status === 401 ? "Wrong display key" : `Server error ${res.status}`);
       const j = (await res.json()) as BoardResponse;
+      // Not while a "Pulled?" dialog is open: the next poll will do it.
+      if (BUILD && j.build && j.build !== BUILD && !confirmOpen.current) return reloadForNewBuild();
       setClockOffset(Date.parse(j.now) - Date.now());
       setData(j);
       setLastOk(Date.now());

@@ -70,6 +70,7 @@ export async function board(): Promise<BoardResponse> {
   const { toPull, justPulled } = applyPulled(cards, pulled, now, c.undoMin);
   return {
     now: now.toISOString(),
+    build: process.env.NEXT_PUBLIC_BUILD_ID ?? "",
     mode: c.mode,
     source: c.source,
     amberMin: c.amberMin,

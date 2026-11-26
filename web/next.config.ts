@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
   // The dev badge would sit on top of the board on the monitors.
   devIndicators: false,
   poweredByHeader: false,
+  // Stamped into both the page and the API at build time. A screen that is still running an
+  // older build sees a different stamp on its next poll and reloads itself (see Board.tsx).
+  env: { NEXT_PUBLIC_BUILD_ID: String(Date.now()) },
   async headers() {
     return [
       {
