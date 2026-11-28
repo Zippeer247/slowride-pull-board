@@ -2,6 +2,7 @@
 
 // The board shown on the Fire TV monitors. Driven entirely by the remote:
 //   D-pad = move, tap OK (Enter) = pulled, hold OK = bring back the last pulled order.
+//   An order too long for its card ("+3 more") opens in full on OK first; OK there = pulled.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoardResponse, Card, PulledInfo } from "@/lib/types";
@@ -13,6 +14,8 @@ const HOLD_MS = 1500; // hold OK this long to bring back the last pulled order
 const HOLD_SHOW_MS = 300; // shorter than this is a normal tap
 const BUILD = process.env.NEXT_PUBLIC_BUILD_ID ?? ""; // the build this page came from
 const RELOAD_GAP_MS = 120_000; // never auto-reload more often than this
+const CARD_ITEMS = 4; // a card shows up to this many lines; longer orders open in full on OK
+const CARD_ITEMS_CUT = 3; // a longer order shows this many, plus "+N more", so the card still fits
 
 /** A newer version was deployed: reload to pick it up. The sticks have no refresh button. */
 function reloadForNewBuild() {
@@ -140,6 +143,9 @@ export default function Board() {
   const cardRefs = useRef(new Map<string, HTMLElement>());
   const zone = useRef<"grid" | "strip">("grid");
   const lastGridIdx = useRef(0);
+  // The order opened in full (too many items for its card). Back closes it.
+  const [detailKey, setDetailKey] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => setParams(readParams()), []);
 
@@ -218,6 +224,11 @@ export default function Board() {
     }
   }, [order, focusKey, toPull, justPulled]);
 
+  const detail = detailKey ? toPull.find((c) => c.key === detailKey) ?? null : null;
+  useEffect(() => {
+    if (detailKey && data && !detail) setDetailKey(null);
+  }, [detailKey, detail, data]);
+
   useEffect(() => {
     if (focusKey) cardRefs.current.get(focusKey)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [focusKey]);
@@ -293,6 +304,7 @@ export default function Board() {
       return;
     }
     latest.current.send(last.key, true);
+    setDetailKey(null);
     setFocusKey(last.key);
     zone.current = "grid";
     showToast(`${last.number} is back`);
@@ -336,18 +348,38 @@ export default function Board() {
   // Remote / keyboard handling.
   // OK acts on release, so a press can be told apart from a hold:
   //   tap = pull the selected order, hold ~1.5 s = bring back the last pulled order.
-  // Back does nothing on the board (the Fire TV app keeps it from leaving).
+  // Back closes an opened order; otherwise it does nothing (the Fire TV app keeps it from leaving).
   useEffect(() => {
-    (window as unknown as { pullboardBack?: () => boolean }).pullboardBack = () => false;
+    const closeDetail = () => {
+      if (!detailKey) return false;
+      setDetailKey(null);
+      return true;
+    };
+    (window as unknown as { pullboardBack?: () => boolean }).pullboardBack = closeDetail;
     const isOkKey = (e: KeyboardEvent) => e.key === "Enter" || e.key === " " || e.keyCode === 23;
 
     // One tap = done. No confirm step: a mis-tap is undone by holding OK.
+    // A card showing "+N more" opens in full first, so the whole order can be read.
     const onOk = () => {
+      if (detailKey) {
+        const i = toPull.findIndex((c) => c.key === detailKey);
+        setDetailKey(null);
+        if (i < 0) return;
+        const rest = toPull.filter((_, j) => j !== i);
+        const nextCard = rest[Math.min(i, rest.length - 1)];
+        if (nextCard) setFocusKey(nextCard.key);
+        send(toPull[i].key, false);
+        return;
+      }
       if (!focusKey) return;
       const i = order.indexOf(focusKey);
       if (i < 0) return;
       if (i >= toPull.length) {
         send(justPulled[i - toPull.length].key, true); // tap a "Pulled" chip = put it back
+        return;
+      }
+      if (toPull[i].items.length > CARD_ITEMS) {
+        setDetailKey(toPull[i].key);
         return;
       }
       // Keep focus in the grid: move to the card that takes this one's place.
@@ -362,6 +394,15 @@ export default function Board() {
       if (isOkKey(e)) {
         e.preventDefault();
         if (!e.repeat) startHold();
+        return;
+      }
+      if (detailKey) {
+        // The open order: up/down scroll a long list, Esc/Backspace close it (a browser's Back).
+        if (k === "Escape" || k === "Backspace") closeDetail();
+        else if (k === "ArrowDown") detailRef.current?.scrollBy({ top: 360, behavior: "smooth" });
+        else if (k === "ArrowUp") detailRef.current?.scrollBy({ top: -360, behavior: "smooth" });
+        else return;
+        e.preventDefault();
         return;
       }
       if (!focusKey) return;
@@ -396,7 +437,7 @@ export default function Board() {
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
     };
-  }, [focusKey, order, toPull, justPulled, send, startHold, endHold]);
+  }, [focusKey, detailKey, order, toPull, justPulled, send, startHold, endHold]);
 
   const stale = (lastOk === 0 && !!failMsg) || (lastOk > 0 && tick - lastOk > STALE_MS);
   const alarm = !!data && toPull.some((c) => now - Date.parse(c.createdAt) >= data.alarmMin * 60000);
@@ -442,7 +483,7 @@ export default function Board() {
                   <span className="age">{ageText(ms)}</span>
                 </div>
                 <ul className="items">
-                  {c.items.slice(0, 4).map((it, i) => (
+                  {c.items.slice(0, c.items.length > CARD_ITEMS ? CARD_ITEMS_CUT : CARD_ITEMS).map((it, i) => (
                     <li key={i}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {it.image ? <img src={it.image} alt="" /> : <div className="noimg" />}
@@ -453,7 +494,11 @@ export default function Board() {
                       {it.qty > 1 && <div className="qty">×{it.qty}</div>}
                     </li>
                   ))}
-                  {c.items.length > 4 && <li className="dim">+{c.items.length - 4} more</li>}
+                  {c.items.length > CARD_ITEMS && (
+                    <li className="more">
+                      +{c.items.length - CARD_ITEMS_CUT} more <span className="dim">· OK to see all</span>
+                    </li>
+                  )}
                 </ul>
               </article>
             );
@@ -471,6 +516,40 @@ export default function Board() {
               </span>
             ))}
           </footer>
+        )}
+
+        {detail && (
+          <div className="detail-veil">
+            <section className="detail">
+              <div className="detail-head">
+                <span className="num">{detail.number}</span>
+                {detail.kind === "pickup" && <span className="dim">Pickup</span>}
+                <span className="dim">
+                  {detail.items.reduce((n, it) => n + it.qty, 0)} items
+                </span>
+                <span className="age">{ageText(now - Date.parse(detail.createdAt))}</span>
+              </div>
+              <div className="detail-list" ref={detailRef}>
+                <ul className="items">
+                  {detail.items.map((it, i) => (
+                    <li key={i}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {it.image ? <img src={it.image} alt="" /> : <div className="noimg" />}
+                      <div className="it">
+                        <div className="it-title">{it.title}</div>
+                        {it.variant && <div className="it-var">{it.variant}</div>}
+                      </div>
+                      {it.qty > 1 && <div className="qty">×{it.qty}</div>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="detail-keys">
+                <span><b>OK</b> Pulled</span>
+                <span><b>Back</b> Close</span>
+              </div>
+            </section>
+          </div>
         )}
 
         {holdProgress !== null && (

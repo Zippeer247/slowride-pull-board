@@ -56,6 +56,7 @@ The board opens on its own.
 
 - **New orders pulse.** After **30 minutes** the card turns **light red**. If anything has waited over **an hour**, **"To pull" flashes red**.
 - Go get the items, set them aside, then on the remote: select the order and press **OK** once. It clears right away.
+- **Big orders** (a card that says **"+3 more"**): press **OK** to see the whole order. Press **OK** again once it's pulled, or **Back** to close it.
 - **Pulled the wrong one?** **Hold OK** until the bar fills (about 1.5 seconds). The last order you pulled comes back. This works for 15 minutes after the pull.
 - **Red "Not connected" bar?** Check the Wi-Fi. The board fixes itself when the internet comes back. The ☰ button on the remote reloads it right away.
 - **Someone pressed Home?** Open **Pull Board** from the apps row, or just unplug and replug the stick.

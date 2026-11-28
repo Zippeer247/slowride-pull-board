@@ -35,7 +35,7 @@ a { color: var(--ink); }
 
 /* Cards */
 .cards { flex: 1; overflow: hidden; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: min-content; gap: 32px; align-content: start; align-items: start; padding: 8px; margin: -8px; }
-.card { background: var(--card); border-radius: var(--radius); padding: 36px 40px 40px; display: flex; flex-direction: column; gap: 28px; outline: 0 solid transparent; transition: outline-color 0.15s, box-shadow 0.15s; scroll-margin: 16px; }
+.card { background: var(--card); border-radius: var(--radius); padding: 36px 40px 40px; display: flex; flex-direction: column; gap: 28px; outline: 0 solid transparent; transition: outline-color 0.15s, box-shadow 0.15s; scroll-margin: 16px 16px 170px; }
 .card.focus { outline: 6px solid var(--ink); outline-offset: 0; }
 .card.lvl-new { animation: arrive 1.4s ease-in-out infinite; }
 @keyframes arrive { 50% { box-shadow: 0 0 0 10px rgba(10, 10, 10, 0.12); } }
@@ -80,3 +80,20 @@ a { color: var(--ink); }
 @keyframes drop { from { transform: translate(-50%, -24px); opacity: 0; } }
 /* Logo above "All clear": a little narrower than the words, centred. */
 .clear-logo { width: 640px; height: auto; display: block; }
+
+/* An order with more items than its card holds: "+3 more" on the card, then the whole order on OK. */
+.items li.more { font-size: 28px; font-weight: 700; }
+.detail-veil { position: absolute; inset: 0; background: rgba(20, 39, 81, 0.45); display: grid; place-items: center; z-index: 5; }
+.detail { width: 1600px; max-height: 960px; background: var(--card); border-radius: var(--radius); padding: 44px 56px 40px; display: flex; flex-direction: column; gap: 32px; box-shadow: 0 40px 120px rgba(0, 0, 0, 0.25); }
+.detail-head { display: flex; align-items: baseline; gap: 24px; }
+.detail-head .num { font-size: 72px; }
+.detail-head .dim { font-size: 34px; font-weight: 600; }
+.detail-head .age { font-size: 36px; }
+.detail-list { overflow-y: auto; scrollbar-width: none; min-height: 0; flex: 1; }
+.detail-list::-webkit-scrollbar { display: none; }
+.detail-list .items { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 48px; }
+.detail-list .items img, .detail-list .noimg { width: 112px; height: 112px; }
+.detail-list .it-title { font-size: 34px; }
+.detail-list .it-var { font-size: 30px; }
+.detail-keys { display: flex; gap: 48px; font-size: 30px; font-weight: 500; color: var(--dim); }
+.detail-keys b { color: var(--ink); background: var(--bg); border-radius: 14px; padding: 6px 16px; margin-right: 10px; font-weight: 700; }
